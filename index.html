@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <title>Vevo</title>
+  <script src="./static/tailwind.js"></script>
+  <script src="./static/vue.global.js"></script>
+  <script src="./static/flowbite.min.js"></script>
+  <script src="./static/d3.v7.min.js"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style type="text/tailwindcss">
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    @layer base {
+      a[href^="http"] {
+        @apply text-blue-500;
+      }
+
+      a:hover {
+        @apply text-blue-700 underline;
+      }
+
+      h1 {
+        @apply mb-6 text-4xl font-bold text-gray-900 text-center;
+      }
+
+      h2 {
+        @apply mb-3 pt-4 text-2xl font-bold tracking-tight text-gray-900;
+      }
+
+      h4 {
+        @apply mb-4 pt-12 text-3xl font-semibold text-gray-900;
+      }
+
+      h5 {
+        @apply mb-3 pt-4 text-2xl font-bold tracking-tight text-gray-900;
+      }
+
+      p {
+        @apply mb-4 font-normal text-gray-900 leading-relaxed;
+      }
+    }
+
+    @layer components {
+      .list-select {
+        @apply block py-2 px-3 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0;
+      }
+
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        padding: 8px;
+        font: 12px sans-serif;
+        background: lightsteelblue;
+        border: 0;
+        border-radius: 8px;
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .text-p {
+        @apply mb-4 font-normal text-gray-900 leading-relaxed;
+      }
+
+      .author {
+        @apply font-medium mr-2 pb-1 text-gray-900 inline-block text-base;
+      }
+
+      .author a {
+          @apply text-gray-900;
+        }
+
+      .affiliation {
+        @apply font-medium mr-2 pb-1 text-gray-900 block text-base;
+      }
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {}
+        }
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- <nav class="bg-white fixed w-full z-20 top-0 start-0 border-gray-200 border-b border-gray-200"
+      style="font-weight: bold;">
+      <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-3">
+        <button data-collapse-toggle="navbar-default" type="button"
+          class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-controls="navbar-default" aria-expanded="false">
+          <span class="sr-only">Open main menu</span>
+          <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 17 14">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M1 1h15M1 7h15M1 13h15" />
+          </svg>
+        </button>
+
+        <div class="hidden w-full md:block md:w-auto ml-auto" id="navbar-default">
+          <ul
+            class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white">
+            <li>
+              <a href="#home" class="list-select"><b>Home</b></a>
+            </li>
+            <li>
+              <a href="#vevo-vc" class="list-select"><b>Vevo-Timbre</b></a>
+            </li>
+            <li>
+              <a href="#vevo-style" class="list-select"><b>Vevo-Style</b></a>
+            </li>
+            <li>
+              <a href="#vevo-vc" class="list-select"><b>Vevo-Voice</b></a>
+            </li>
+            <li>
+              <a href="#vevo-tts" class="list-select"><b>Vevo-TTS</b></a>
+            </li>
+            <li>
+              <a href="https://github.com/open-mmlab/Amphion/tree/main/models/vc/vevo" class="list-select"
+                target="_blank">
+                <svg class="w-6 h-6 text-gray-900 hover:text-blue-700" aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd"
+                    d="M12.006 2a9.847 9.847 0 0 0-6.484 2.44 10.32 10.32 0 0 0-3.393 6.17 10.48 10.48 0 0 0 1.317 6.955 10.045 10.045 0 0 0 5.4 4.418c.504.095.683-.223.683-.494 0-.245-.01-1.052-.014-1.908-2.78.62-3.366-1.21-3.366-1.21a2.711 2.711 0 0 0-1.11-1.5c-.907-.637.07-.621.07-.621.317.044.62.163.885.346.266.183.487.426.647.71.135.253.318.476.538.655a2.079 2.079 0 0 0 2.37.196c.045-.52.27-1.006.635-1.37-2.219-.259-4.554-1.138-4.554-5.07a4.022 4.022 0 0 1 1.031-2.75 3.77 3.77 0 0 1 .096-2.713s.839-.275 2.749 1.05a9.26 9.26 0 0 1 5.004 0c1.906-1.325 2.74-1.05 2.74-1.05.37.858.406 1.828.101 2.713a4.017 4.017 0 0 1 1.029 2.75c0 3.939-2.339 4.805-4.564 5.058a2.471 2.471 0 0 1 .679 1.897c0 1.372-.012 2.477-.012 2.814 0 .272.18.592.687.492a10.05 10.05 0 0 0 5.388-4.421 10.473 10.473 0 0 0 1.313-6.948 10.32 10.32 0 0 0-3.39-6.165A9.847 9.847 0 0 0 12.007 2Z"
+                    clip-rule="evenodd" />
+                </svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://huggingface.co/amphion/Vevo" class="list-select" target="_blank">
+                <img class="h-6 w-6" src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" />
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav> -->
+
+
+    <div class="p-5 md:p-0 mt-16 max-w-screen-xl mx-auto">
+      <div class="p-6" id="home">
+        <div class="mt-8 mb-8">
+          <h1>TTS Can Speak in Any Style with Any Voice</h1>
+        </div>
+
+        <div class="mx-auto mt-8 mb-16">
+          <div class="max-w-[900px] mx-auto text-center pb-10 flex flex-col gap-3">
+            <div class="text-sm">
+              <span class="author">Anonymous Authors</span>
+            </div>
+          </div>
+
+          <div class="max-w-[900px] mx-auto mt-8 mb-16">
+            <h2>Abstract</h2>
+            <p class="text-p">
+              This study proposes <b>FlexiVoice</b>, a text-to-speech (TTS) synthesis system speaking in any style with any voice. 
+              The speaking style is controlled by a natural-language instruction and the voice timbre is provided by a speech reference in zero-shot manner. 
+              FlexiVoice is built with an LLM core, which takes <b><span style="color: RoyalBlue;">text</span></b> as input, and also takes an 
+              optional <b><span style="color: MediumVioletRed">natural language instruction</span></b> and an optional <b><span style="color: BlueViolet">speech reference</span></b> 
+              to control <b><span style="color: MediumVioletRed">style</span></b> and <b><span style="color: BlueViolet">timbre</span></b>, respectively. 
+              FlexiVoice is equipped with a novel <b>Progressive Post-Training (PPT)</b> scheme that progressively unlocks accurate and flexible controllability. 
+              In particular, it first employs Direct Preference Optimization (DPO) to enable FlexiVoice to accurately follow both natural language instruction and speech reference simultaneously. 
+              It then uses a multi-objective Group Relative Policy Optimization (GRPO) to disentangle style instruction, reference timbre, and textual content. 
+              Finally, it adapts instruction GRPO for more advanced instruction following. Experimental results show that FlexiVoice surpasses competing baselines and demonstrates strong capability in decoupling control factors. 
+              Human evaluations further confirm its naturalness, controllability, and robustness.
+            </p>
+          </div>
+
+          <div class="mt-8 mb-8" id="gallery">
+            <!-- <h4>What can FlexiVoice do?</h4> -->
+            <div class="flex mx-auto justify-center max-w-screen-lg py-8">
+              <img src="static/main.png"></img>
+            </div>
+          </div>
+
+
+          <div class="mt-8 mb-8" id="instruction-tts">
+            <h4>Complex and Open-ended Instruction Following</h4>
+          </div>
+
+          <div class="mt-8 mb-8">
+            <p>
+              We sample three English and three Chinese data points from InstructTTSEval, 
+              with and without speech reference control.
+            </p>
+          </div>
+
+
+
+          <div class="w-full overflow-x-auto">
+            <div class="mx-auto text-sm text-left rtl:text-right text-gray-900">
+              <table class="table-gallery" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="text-align: center; width: 20%;">Style Instruction</th>
+                    <th style="text-align: center; width: 20%;">Target Text</th>
+                    <th style="text-align: center; width: 20%;">Timbre Reference</th>
+                    <th style="text-align: center; width: 20%;">Ground-truth</th>
+                    <th style="text-align: center; width: 20%;">FlexiVoice (Ours)</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  <tr> <!--1.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">Embody the annoyance of dealing with repetitive requests, 
+                      your voice maintaining bright sharpness and energetic pace with a hint of sarcasm.</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">Okay, fine. Then I will just go put on your favorite nerdy t-shirt. 
+                      The one with the guy from Beck to the future on it.</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/en_935.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_935.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--1.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0019_000271.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_935_0019.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--2.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">Try to sound like a middle-aged radio host with a smooth resonant texture 
+                        and consistent volume, delivering reports in an objective and formal tone in Standard American 
+                        English.</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">Bluth Development Company President George Bluth was arrested tonight for 
+                        defrauding investors and using the company as his personal piggy bank. More intrigue on the 
+                        high seas tonight as dozens of local pirates were arrested for protesting the yacht club's 
+                        discriminatory policies.</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/en_732.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_732.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--1.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0012_000123.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_732_0012.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--3.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">Deliver the effect of someone revealing a surprising discovery with 
+                        frantic urgency, keeping listeners focused through a rapid and loud American male voice.</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">Matt, are you coming? All right, look, forget about that. You don't want 
+                        to see a dead body anyway. I know that. Look, just come on down here, cover your eyes, and step 
+                        over the body and show me where the hose is so I can rinse this blood and brains off here.</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/en_786.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_786.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--3.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0011_000288.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/en_786_0011.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--4.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">戏剧性的酒馆老板对顾客夸张地诉苦。</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">哎呀,我的电风扇,你这是败我的家呀。</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/zh_439.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_439.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--4.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0008_000216.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_439_0008.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--5.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">以清晰而洪亮的声音宣布节目获奖者,让每一个字都充满感染力。</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">那么今天在现场同样也请来了中科院物理研究所研究员曹泽贤老师，
+                        作为我们现场每一个实验背后的科学顾问和支撑，有请曹老师欢迎你。</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/zh_134.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_134.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--5.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0003_000213.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_134_0003.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--6.1-->
+                    <td rowspan="2">
+                      <span class="text-xs">以一种高亢而直率的语调点评朋友近期失败的尝试，
+                        这里面带着些调皮的戏谑。</span>
+                    </td>
+                    <td rowspan="2">
+                      <span class="text-xs">你那哪是打呼噜啊，你那是打炸雷。</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/gt/zh_783.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_783.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--6.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/prompt/0009_000140.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/instruct/zh_783_0009.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+          <div class="mt-8 mb-8" id="instruction-tts">
+            <h4>Emotion-related Instruction TTS</h4>
+          </div>
+
+          <div class="mt-8 mb-8">
+            <p>
+              We randomly select 4 samples from our constructed evaluation set, which focuses on emotion-centered instructions. 
+              For each sample, an instruction regulates the target emotion, with different conditions:
+            <ol>
+              <li>1. Normal text + Neutral speech reference;</li>
+              <li>2. Normal text + Emotional speech reference;</li>
+              <li>3. Normal text + No speech reference (random voice);</li>
+              <li>4. Emotional text + No speech reference (random voice).</li>
+            </ol>
+            </p>
+          </div>
+          
+          <div class="w-full overflow-x-auto">
+            <div class="mx-auto text-sm text-left rtl:text-right text-gray-900">
+              <table class="table-gallery" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="text-align: center; width: 15.5%;">Style Instruction</th>
+                    <th style="text-align: center; width: 16.5%;">Target Text</th>
+                    <th style="text-align: center; width: 22%;">Timbre Reference</th>
+                    <th style="text-align: center; width: 23%;">Ground-truth</th>
+                    <th style="text-align: center; width: 23%;">FlexiVoice (Ours)</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  <tr> <!--1.1-->
+                    <td rowspan="4">
+                      Speak this sentence using <b>happy</b> emotion.
+                    </td>
+                    <td rowspan="3">
+                      She found herself able to sing any role and any song which struck her fancy.
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/neutral_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Neutral]</span>
+                    </td>
+                    <td rowspan="3">
+                      <audio controls preload="auto">
+                        <source src="data/emo1/gt.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/flexivoice-2.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--1.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/emotional_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Sad]</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/flexivoice-3.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--1.3-->
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/flexivoice-1.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--1.4-->
+                    <td>
+                      I'm angry at how unfairly I was treated in that meeting, 
+                      as if my opinion didn't matter at all.<br>
+                      <span class="text-xs" style="color: RoyalBlue;">[Angry]</span>
+                    </td>
+                    <td>
+                      /<br>
+                      <span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo1/flexivoice-4.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--2.1-->
+                    <td rowspan="4">
+                      Express <b>sadness</b> when speaking it.
+                    </td>
+                    <td rowspan="3">
+                      Don't ask me to carry an oily rag like that.
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/neutral_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Neutral]</span>
+                    </td>
+                    <td rowspan="3">
+                      <audio controls preload="auto">
+                        <source src="data/emo2/gt.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/flexivoice-2.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--2.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/emotional_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Angry]</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/flexivoice-3.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--2.3-->
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/flexivoice-1.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--2.4-->
+                    <td>
+                      I feel happy when I look back at the little memories we've made together.<br>
+                      <span class="text-xs" style="color: RoyalBlue;">[Happy]</span>
+                    </td>
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo2/flexivoice-4.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--3.1-->
+                    <td rowspan="4">
+                      用<b>生气</b>的情感说出这句话。
+                    </td>
+                    <td rowspan="3">
+                      这种社会风气真是让人无语。大家都只顾自己，完全不管别人的感受。
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/neutral_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Neutral]</span>
+                    </td>
+                    <td rowspan="3">
+                      <audio controls preload="auto">
+                        <source src="data/emo3/gt.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/flexivoice-2.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--3.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/emotional_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Happy]</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/flexivoice-3.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--3.3-->
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/flexivoice-1.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--3.4-->
+                    <td>
+                      回忆起你在我身边的点滴，仿佛在诉说着心中无尽的悲伤。<br>
+                      <span class="text-xs" style="color: RoyalBlue;">[Sad]</span>
+                    </td>
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/flexivoice-4.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+
+                  <tr> <!--4.1-->
+                    <td rowspan="4">
+                      在语气中表达出<b>吃惊</b>。
+                    </td>
+                    <td rowspan="3">
+                      我原以为这家店只是卖普通的饰品，没想到它竟然有如此独特的手工艺术品，真让人惊艳。
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo4/neutral_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Neutral]</span>
+                    </td>
+                    <td rowspan="3">
+                      <audio controls preload="auto">
+                        <source src="data/emo4/gt.wav">
+                      </audio>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo4/flexivoice-2.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--4.2-->
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo4/emotional_prompt.wav">
+                      </audio>
+                      <span class="text-xs" style="color: BlueViolet;">[Happy]</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo3/flexivoice-3.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--4.3-->
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo4/flexivoice-1.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                  <tr> <!--4.4-->
+                    <td>
+                      人生的很多瞬间都让我觉得痛苦，可我又无力挣扎。<br>
+                      <span class="text-xs" style="color: RoyalBlue;">[Sad]</span>
+                    </td>
+                    <td>
+                      /<br><span class="text-xs">(random voice)</span>
+                    </td>
+                    <td>
+                      /
+                    </td>
+                    <td>
+                      <audio controls preload="auto">
+                        <source src="data/emo4/flexivoice-4.wav">
+                      </audio>
+                    </td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+
+
+
+          <!-- <div class="mt-8 mb-8">
+            <h4>Ethics Statement</h4>
+            <p>
+              As with other powerful new AI innovations, we recognize this technology brings the potential for
+              misuse and
+              unintended harm. We will build a highly effective classifier that can distinguish between
+              authentic speech
+              and audio generated with Vevo to mitigate these possible future risks.
+            </p>
+          </div> -->
+
+          <!-- <div class="mt-8 mb-8" id="citation">
+            <h4>Citation</h4>
+            <p>If you find this work useful for your research, please cite our paper:</p>
+            <div class="bg-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm">
+              <pre>@inproceedings{vevo,
+  author       = {Xueyao Zhang and Xiaohui Zhang and Kainan Peng and Zhenyu Tang and Vimal Manohar and Yingru Liu and Jeff Hwang and Dangna Li and Yuhao Wang and Julian Chan and Yuan Huang and Zhizheng Wu and Mingbo Ma},
+  title        = {Vevo: Controllable Zero-Shot Voice Imitation with Self-Supervised Disentanglement},
+  booktitle    = {{ICLR}},
+  publisher    = {OpenReview.net},
+  year         = {2025}
+}</pre>
+            </div>
+
+            <p class="mt-4">If you use the Vevo implementation in Amphion, please also cite:</p>
+            <div class="bg-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm">
+              <pre>@article{amphion2,
+  title        = {Overview of the Amphion Toolkit (v0.2)},
+  author       = {Jiaqi Li and Xueyao Zhang and Yuancheng Wang and Haorui He and Chaoren Wang and Li Wang and Huan Liao and Junyi Ao and Zeyu Xie and Yiqiao Huang and Junan Zhang and Zhizheng Wu},
+  year         = {2025},
+  journal      = {arXiv preprint arXiv:2501.15442},
+}
+
+@inproceedings{amphion,
+    author={Xueyao Zhang and Liumeng Xue and Yicheng Gu and Yuancheng Wang and Jiaqi Li and Haorui He and Chaoren Wang and Ting Song and Xi Chen and Zihao Fang and Haopeng Chen and Junan Zhang and Tze Ying Tang and Lexiao Zou and Mingxuan Wang and Jun Han and Kai Chen and Haizhou Li and Zhizheng Wu},
+    title={Amphion: An Open-Source Audio, Music and Speech Generation Toolkit},
+    booktitle={{IEEE} Spoken Language Technology Workshop, {SLT} 2024},
+    year={2024}
+}</pre>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div> -->
+
+  
+
+</body>
+
+</html>
